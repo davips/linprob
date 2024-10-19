@@ -20,27 +20,27 @@
 //
 package parsing
 
-import inference.Types._
-import parsing.AST._
+import inference.Types.*
+import parsing.AST.*
 
 import scala.util.parsing.combinator.PackratParsers
 
 trait Native extends PackratParsers {
 
-  def expandScala(typedIdents: List[NamedIdent], code: Text, typStr: String): Lambda = {
-    val scalaExpr = Scala(typedIdents, code)
-    var newbody = Sequence(List(scalaExpr))
-    var res: ExprT = str2type(typStr, scalaExpr)
-    for (arg <- typedIdents.tail.reverse) {
-      val la = Lambda(arg, newbody)
-      la.t = Some(LambdaT(arg.t.get, res))
-      newbody = Sequence(List(la))
-      res = la.t.get
-    }
-    val la = Lambda(typedIdents.head, newbody)
-    la.t = Some(LambdaT(typedIdents.head.t.get, res))
-    la
-  }
+  //   def expandScala(typedIdents: List[NamedIdent], code: Text, typStr: String): Lambda = {
+  //     val scalaExpr = Scala(typedIdents, code)
+  //     var newbody = Sequence(List(scalaExpr))
+  //     var res: ExprT = str2type(typStr, scalaExpr)
+  //     for (arg <- typedIdents.tail.reverse) {
+  //       val la = Lambda(arg, newbody)
+  //       la.t = Some(LambdaT(arg.t.get, res))
+  //       newbody = Sequence(List(la))
+  //       res = la.t.get
+  //     }
+  //     val la = Lambda(typedIdents.head, newbody)
+  //     la.t = Some(LambdaT(typedIdents.head.t.get, res))
+  //     la
+  //   }
 
   def buildTypedIdent(id: NamedIdent, typStr: String): NamedIdent = {
     val exprT = str2type(typStr, id)

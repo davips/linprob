@@ -37,7 +37,7 @@
 
 package inference
 
-import parsing.AST._
+import parsing.AST.*
 
 object Types {
 
@@ -92,13 +92,18 @@ object Types {
   //  }
 
   case class AnyT(expr: Expr) extends PrimitiveExprT {
-    override val toString = f"'any'"
+    override val toString: String = f"'any'"
     override val scalaTypeDescr: String = "Any"
   }
 
   case class LambdaT(from: ExprT, to: ExprT) extends ExprT {
-    override val toString = f"{$from → $to}"
+    override val toString: String = f"{$from → $to}"
     lazy val scalaTypeDescr: String = f"$from => $to"
+  }
+
+  case class PartialOpT(pop: PartialOp) extends ExprT {
+    override val toString: String = pop.opsymbol
+    lazy val scalaTypeDescr: String = pop.opsymbol
   }
 
   case class Var(id: Int) extends TypeSystem with ExprT {

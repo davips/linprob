@@ -20,7 +20,7 @@
 //
 package parsing
 
-import parsing.AST._
+import parsing.AST.*
 
 trait Lamb {
   def expandLambda(args: List[NamedIdent], body: Sequence): Lambda = {
@@ -45,7 +45,7 @@ trait Lamb {
     }
 
     minmax(body) match {
-      case None => println("Missing at least one annonymous identifier inside ", body); sys.exit()
+      case None => println("Missing at least one annonymous identifier inside " + body); sys.exit()
       case Some(mn -> mx) =>
         val (firstArg, newbody) = if (mn == -1) {
           if (mx != -1) {
@@ -63,4 +63,4 @@ trait Lamb {
         Lambda(firstArg, newbody)
     }
   }
-}
+} 

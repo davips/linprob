@@ -37,8 +37,8 @@
 
 package inference
 
-import inference.Types._
-import parsing.AST._
+import inference.Types.*
+import parsing.AST.*
 
 class Undefined(msg: String) extends Exception(msg)
 
@@ -90,13 +90,15 @@ class TypeSystem {
         case Sequence(items) => analyse_sequence(items.zip(LazyList.continually(None)), env, nongen, debug)
         case Ident(name) => gettype(name, env, nongen)
         case id@Id() =>
-          LambdaT(AnyT(id), TextT(id))  // TODO está correto passar id como expr?
+          LambdaT(AnyT(id), TextT(id)) // TODO está correto passar id como expr?
         case Appl(fn, arg) =>
           val (funtype, _) = analyse(fn, env, nongen, debug)
           val (argtype, _) = analyse(arg, env, nongen, debug)
           val resulttype = newVar
           unify(LambdaT(argtype, resulttype), funtype) // TODO: verify if we need to pass some expr here for LambdaT
           resulttype
+        case pop: PartialOp =>
+          LambdaT(NumT(pop), LambdaT(NumT(pop), NumT(pop))) //PartialOpT(pop)
         case Lambda(arg, body) =>
           val argtype = newVar
           val (resulttype, _) = analyse(body, env + (arg.name -> argtype), nongen + argtype, debug)
@@ -142,7 +144,7 @@ class TypeSystem {
         case v: Var => if (isgeneric(v, nongen)) mappings.getOrElseUpdate(v, newVar) else v
         case LambdaT(from, to) => LambdaT(freshrec(from), freshrec(to))
         case EmptyT => EmptyT
-        case pet: PrimitiveExprT => pet
+        case pet: (PrimitiveExprT | PartialOpT) => pet //need PartialOpT here?
       }
     }
 
@@ -150,7 +152,7 @@ class TypeSystem {
   }
 
 
-  def unify(t1: ExprT, t2: ExprT, reverse: Boolean = false) {
+  def unify(t1: ExprT, t2: ExprT, reverse: Boolean = false): Unit = {
     val type1 = prune(t1)
     val type2 = prune(t2)
     //    println("ty1: " + type1 + " ty2:" + type2)
@@ -219,7 +221,7 @@ object HM extends TypeSystem {
         print(t.getMessage)
         return false
     }
-    println
+    println()
     true
   }
 }

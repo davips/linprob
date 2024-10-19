@@ -20,49 +20,49 @@
 // part of this work is illegal and it is unethical regarding the effort and
 // time spent here.
 
-package algebra
-
-import ky.korins.blake3.Blake3
-
-case class Hosh(cells: Array[BigInt]) {
-  lazy val alph: Array[Char] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.".toCharArray
-  lazy val n: BigInt = cells(5) +
-    cells(4) * Hosh.p +
-    cells(3) * Hosh.p.pow(2) +
-    cells(2) * Hosh.p.pow(3) +
-    cells(1) * Hosh.p.pow(4) +
-    cells(0) * Hosh.p.pow(5)
-  lazy val id: String = {
-    val txt = Array.fill(40)('0')
-    var divmod: (BigInt, BigInt) = n -> 0
-    for (i <- 0 to 39) {
-      divmod = divmod._1 /% 64
-      txt(i) = alph.charAt(divmod._2.toInt)
-    }
-    txt.mkString
-  }
-
-  def *(that: Hosh): Hosh = Hosh(Array(
-    (cells(0) + that.cells(0)) % Hosh.p,
-    (cells(1) + that.cells(1)) % Hosh.p,
-    (cells(2) + that.cells(2) + cells(3) * that.cells(0)) % Hosh.p,
-    (cells(3) + that.cells(3)) % Hosh.p,
-    (cells(4) + that.cells(4) + cells(1) * that.cells(3)) % Hosh.p,
-    (cells(5) + that.cells(5) + cells(1) * that.cells(2) + cells(4) * that.cells(0)) % Hosh.p
-  ))
-}
-
-object Hosh {
-  lazy val p: BigInt = 1099511627689L
-  lazy val order: BigInt = p.pow(6)
-  def apply(blob: Array[Byte]): Hosh = {
-    val cells: Array[BigInt] = Array.fill(6)(0)
-    val num: BigInt = Blake3.bigInt(blob, 240) % order
-    var divmod: (BigInt, BigInt) = num -> 0
-    for (i <- 5 to 0 by -1) {
-      divmod = divmod._1 /% p
-      cells(i) = divmod._2
-    }
-    Hosh(cells)
-  }
-}
+// package algebra
+//
+// import ky.korins.blake3.Blake3
+//
+// case class Hosh(cells: Array[BigInt]) {
+//   lazy val alph: Array[Char] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.".toCharArray
+//   lazy val n: BigInt = cells(5) +
+//     cells(4) * Hosh.p +
+//     cells(3) * Hosh.p.pow(2) +
+//     cells(2) * Hosh.p.pow(3) +
+//     cells(1) * Hosh.p.pow(4) +
+//     cells(0) * Hosh.p.pow(5)
+//   lazy val id: String = {
+//     val txt = Array.fill(40)('0')
+//     var divmod: (BigInt, BigInt) = n -> 0
+//     for (i <- 0 to 39) {
+//       divmod = divmod._1 /% 64
+//       txt(i) = alph.charAt(divmod._2.toInt)
+//     }
+//     txt.mkString
+//   }
+//
+//   def *(that: Hosh): Hosh = Hosh(Array(
+//     (cells(0) + that.cells(0)) % Hosh.p,
+//     (cells(1) + that.cells(1)) % Hosh.p,
+//     (cells(2) + that.cells(2) + cells(3) * that.cells(0)) % Hosh.p,
+//     (cells(3) + that.cells(3)) % Hosh.p,
+//     (cells(4) + that.cells(4) + cells(1) * that.cells(3)) % Hosh.p,
+//     (cells(5) + that.cells(5) + cells(1) * that.cells(2) + cells(4) * that.cells(0)) % Hosh.p
+//   ))
+// }
+//
+// object Hosh {
+//   lazy val p: BigInt = 1099511627689L
+//   lazy val order: BigInt = p.pow(6)
+//   def apply(blob: Array[Byte]): Hosh = {
+//     val cells: Array[BigInt] = Array.fill(6)(0)
+//     val num: BigInt = Blake3.bigInt(blob, 240) % order
+//     var divmod: (BigInt, BigInt) = num -> 0
+//     for (i <- 5 to 0 by -1) {
+//       divmod = divmod._1 /% p
+//       cells(i) = divmod._2
+//     }
+//     Hosh(cells)
+//   }
+// }

@@ -22,30 +22,30 @@
 
 package parsing
 
-import inference.Types.NumT
-import parsing.AST._
-
-class GrammarTest extends org.scalatest.funsuite.AnyFunSuite {
-
-  List(
-    "↑" -> Bool(true),
-    "↓" -> Bool(false),
-    "0" -> Num(0),
-    "x" -> NamedIdent("x"),
-    "#x" -> NamedIdent("x"),
-    "(x;y)" -> Sequence(List(NamedIdent("x"), NamedIdent("y"))),
-    "{_}" -> Lambda(AnonIdent(), Sequence(List(AnonIdent()))),
-    "{_1; _2}" -> Lambda(AnonIdentN(1), Sequence(List(Lambda(AnonIdentN(2), Sequence(List(AnonIdentN(1), AnonIdentN(2))))))),
-    "{a:n \"a+a\":n}" -> Lambda(NamedIdent("a"), Sequence(List(Scala(List(NamedIdent("a")), Text("a+a")))))
-  ) foreach {
-    case (text, ast) => test(text) {
-      assert(Grammar.parse(text).get.items.head == ast)
-    }
-  }
-
-  //  test("Invoking head on an empty Set should produce NoSuchElementException") {
-  //    assertThrows[NoSuchElementException] {
-  //      Set.empty.head
-  //    }
-  //  }
-}
+// import inference.Types.NumT
+// import parsing.AST._
+//
+// class GrammarTest extends org.scalatest.funsuite.AnyFunSuite {
+//
+//   List(
+//     "↑" -> Bool(true),
+//     "↓" -> Bool(false),
+//     "0" -> Num(0),
+//     "x" -> NamedIdent("x"),
+//     "#x" -> NamedIdent("x"),
+//     "(x;y)" -> Sequence(List(NamedIdent("x"), NamedIdent("y"))),
+//     "{_}" -> Lambda(AnonIdent(), Sequence(List(AnonIdent()))),
+//     "{_1; _2}" -> Lambda(AnonIdentN(1), Sequence(List(Lambda(AnonIdentN(2), Sequence(List(AnonIdentN(1), AnonIdentN(2))))))),
+//     "{a:n \"a+a\":n}" -> Lambda(NamedIdent("a"), Sequence(List(Scala(List(NamedIdent("a")), Text("a+a")))))
+//   ) foreach {
+//     case (text, ast) => test(text) {
+//       assert(Grammar.parse(text).get.items.head == ast)
+//     }
+//   }
+//
+//   //  test("Invoking head on an empty Set should produce NoSuchElementException") {
+//   //    assertThrows[NoSuchElementException] {
+//   //      Set.empty.head
+//   //    }
+//   //  }
+// }

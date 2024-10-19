@@ -30,6 +30,6 @@ object Test extends App with JavaTokenParsers with PackratParsers {
 
   val txt2 = "m ;me; me; m; me"
   val chars = new CharSequenceReader(txt2)
-  lazy val r = parseAll(phrase(program), new PackratReader(chars))
+  lazy val r: ParseResult[List[String]] = parseAll(phrase(program), new PackratReader(chars))
   println(r)
 }

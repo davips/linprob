@@ -21,23 +21,24 @@
 
 import evaluation.Interpreter
 import inference.HM
-import parsing.Grammar
+import parsing.{AST, Grammar}
 
-import scala.io.Source
+import scala.io.{BufferedSource, Source}
 
 object Main extends App {
-  val arq = Source.fromFile("test.tupi")
-  val txt = arq.getLines().map(_.strip).filter(_.nonEmpty)
-  val txt1 = txt.mkString("\n").takeWhile(_ != '¬').replace("²", "^2").replace("³", "^3")
-  val txt2 = txt1.replace("\n", ";\n").replace("(;\n", "(\n").replace("{;\n", "{\n").replace(";\n)", "\n)").replace(";\n}", "\n}").replace(":;", ":").
+  val arq: BufferedSource = Source.fromFile("test.tupi")
+  val txt: Iterator[String] = arq.getLines().map(_.strip).filter(_.nonEmpty)
+  val txt1: String = txt.mkString("\n").takeWhile(_ != '¬').replace("²", "^2").replace("³", "^3")
+  //  println(txt1)
+  val txt2: String = txt1.replace("\n", ";\n").replace("(;\n", "(\n").replace("{;\n", "{\n").replace(";\n)", "\n)").replace(";\n}", "\n}").replace(":;", ":").
     replace(";;", ";").lines().filter(!_.startsWith("~")).toArray().toList.mkString //.lines().map(_.trim).toArray().toList.mkString("\n").replace("\n}", "ŋ}").replace("{\n", "ŋ{").replace(":\n", "ŋ:").replace("\n", ";\n").replace("ŋ:", ":\n").replace("ŋ{", "{\n").replace("ŋ}", "\n}")
-  val txt3 = if (txt2.endsWith(";")) txt2.dropRight(1) else txt2
-  val st = System.currentTimeMillis()
-  val parsed = Grammar.parse(txt3)
-  println((System.currentTimeMillis() - st) + "ms")
-  println(parsed + "\n")
+  val txt3: String = if (txt2.endsWith(";")) txt2.dropRight(1) else txt2
+  val st: Long = System.currentTimeMillis()
+  val parsed: Grammar.ParseResult[AST.Sequence] = Grammar.parse(txt3)
+  println(("" + (System.currentTimeMillis() - st)) + "ms")
+  println(String.valueOf(parsed) + "\n")
   if (!parsed.successful) sys.exit()
   if (!HM.check(parsed.get)) sys.exit()
-  val re = Interpreter.eval(parsed.get)
+  val re: Any = Interpreter.eval(parsed.get)
   println(re)
 }

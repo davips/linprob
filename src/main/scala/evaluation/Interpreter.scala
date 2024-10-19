@@ -21,11 +21,14 @@
 
 package evaluation
 
-import parsing.AST._
+import parsing.AST.*
 import runtime.LMap
+
+import scala.math.pow
 
 object Interpreter {
   def ev(e: Expr, m: LMap[Expr]): (Expr, LMap[Expr]) = {
+    println(e)
     val e2 -> m2 = e match {
       case Assign(x, y) =>
         if (m.get(x.name).isDefined) {
@@ -37,16 +40,32 @@ object Interpreter {
       case Sequence(x :: List()) => ev(x, m)
       case Sequence((a@Assign(_, _)) :: xs) => ev(Sequence(xs), ev(a, m)._2)
       case Sequence(x :: xs) => ev(Sequence(xs), m) // TODO: tail call optimization
-      case Appl(Id(), Ident(name)) =>  Text("##hosh##") -> m
-      case Appl(Id(), e) =>  Text("##hosh##") -> m
-//       case Appl(Id(), Ident(name)) =>  Text(m(name).hosh.get.id) -> m
-//       case Appl(Id(), e) =>  Text(e.hosh.get.id) -> m
+      case Appl(Id(), Ident(name)) => Text("##hosh##") -> m
+      case Appl(Id(), e) => Text("##hosh##") -> m
+      //       case Appl(Id(), Ident(name)) =>  Text(m(name).hosh.get.id) -> m
+      //       case Appl(Id(), e) =>  Text(e.hosh.get.id) -> m
       case Appl(f, x) => ev(f, m)._1 -> ev(x, m)._1 match {
-        case Closure(Lambda(param, body), ctx) -> xev => ev(body, ctx.put(param.name, xev))
+        case Closure(PartialOp(opsymbol), ctx) -> (value: Num) => OpTo(opsymbol, value) -> m
+        case Closure(OpTo(opsymbol, Num(a)), ctx) -> Num(b) =>
+          val r = opsymbol match {
+            case "+" => a + b
+            case "-" => a - b
+            case "*" => a * b
+            case "/" => a / b
+            case "^" => pow(a, b)
+            case "==" => a == b
+            case "/=" => a != b
+            case "<" => a < b
+            case "<=" => a <= b
+            case ">=" => a >= b
+            case ">" => a > b
+          }
+          PrimitiveExpr(r) -> m
+        case Closure(Lambda(param, Sequence(List(body))), ctx) -> xev => ev(body, ctx.put(param.name, xev))
       }
       case p: PrimitiveExpr => p -> m
-      case s@Scala(params, _) => s.func(params.map(x => m(x.name))) -> m
-      case la: Lambda => Closure(la, m) -> m // We need a closure here, since Lambda can be returned as a value to be applied later
+      //       case s@Scala(params, _) => s.func(params.map(x => m(x.name))) -> m
+      case la: (Lambda | PartialOp | OpTo) => Closure(la, m) -> m // We need a closure here, since Lambda can be returned as a value to be applied later
     }
     if (e2.isInstanceOf[PrimitiveExpr]) (e2, m2) else ev(e2, m2)
   }

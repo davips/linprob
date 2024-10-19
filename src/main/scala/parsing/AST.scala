@@ -24,8 +24,8 @@ package parsing
 import inference.Types.EmptyT
 import runtime.LMap
 
-import scala.reflect.runtime.currentMirror
-import scala.tools.reflect.ToolBox
+// import scala.reflect.runtime.currentMirror
+// import scala.tools.reflect.ToolBox
 
 object AST {
 
@@ -39,8 +39,18 @@ object AST {
     def nested: Iterator[Expr]
   }
 
+  case class PartialOp(opsymbol: String) extends Expr {
+    override val toString = f"{$opsymbol}"
+    def nested: Iterator[Expr] = Iterator.empty
+  }
+
+  case class OpTo(opsymbol: String, value: Num) extends Expr {
+    override val toString = f"{$opsymbol}($value)"
+    def nested: Iterator[Expr] = Iterator.empty
+  }
+
   sealed trait PrimitiveExpr extends Expr {
-    val value: Any
+    def value: Any
     //lazy val hosh: Option[Hosh] = Some(Hosh(getClass.toString.map(_.toByte).toArray) * Hosh(toString.map(_.toByte).toArray))
   }
 
@@ -49,13 +59,15 @@ object AST {
     def apply(value: Any): PrimitiveExpr = value match {
       case v: Boolean => Bool(v)
       case v: Double => Num(v)
+      //      case v: java.lang.Boolean => Bool(v)
+      //      case v: java.lang.Double => Num(v)
       case v: Character => Char(v)
       case v: String => Text(v)
     }
   }
 
   case class Empty() extends PrimitiveExpr {
-    lazy val value: Empty = this
+    lazy val value: Any = this // Era lazy val value: Empty = this
     override val toString = "ø"
     t = Some(EmptyT)
     def nested: Iterator[Expr] = Iterator.empty
@@ -67,11 +79,11 @@ object AST {
   }
 
   case class Char(value: java.lang.Character) extends PrimitiveExpr {
-    override val toString: String = value.toString
+    override val toString: String = f"'$value'"
     def nested: Iterator[Expr] = Iterator.empty
   }
 
-  case class Num(value: java.lang.Number) extends PrimitiveExpr {
+  case class Num(value: Double) extends PrimitiveExpr {
     override val toString: String = value.toString
     def nested: Iterator[Expr] = Iterator.empty
   }
@@ -81,47 +93,52 @@ object AST {
     def nested: Iterator[Expr] = Iterator.empty
   }
 
-  case class Closure(value: Lambda, ctx: LMap[Expr]) extends PrimitiveExpr {
-    override val toString: String = value.t.getOrElse("'undefined function type'").toString
+  //  case class Op(f: (a: Double) => (b: Double) => Double, value: Expr) extends PrimitiveExpr {
+  //    override lazy val toString: String = "\"f→" + value + "\""
+  //    def nested: Iterator[Expr] = Iterator.empty
+  //  }
+
+  case class Closure(value: Lambda | PartialOp | OpTo, ctx: LMap[Expr]) extends PrimitiveExpr {
+    override val toString: String = value.t.getOrElse("«undefined function type»").toString
     //override lazy val hosh: Option[Hosh] = ??? // it probably makes no sense to have a hosh here
     def nested: Iterator[Expr] = Iterator.empty //TODO: check this
   }
 
   case class Lambda(param: Ident, body: Sequence) extends Expr {
     //lazy val paramHosh: Hosh = Hosh(param.name.map(_.toByte).toArray)
-    override val toString: String = "{" + param + ": " + body + "}"
+    override val toString: String = f"λ$param→$body"
     //lazy val hosh: Option[Hosh] = Some(Hosh(getClass.toString.map(_.toByte).toArray) * paramHosh * body.hosh.get)
     def nested: Iterator[Expr] = body.nested
   }
 
   case class Assign(a: NamedIdent, b: Expr) extends Expr {
     m = m.put(a.name, b)
-    override val toString: String = a + " ← " + b
+    override val toString: String = String.valueOf(a) + "←" + b
     //lazy val hosh: Option[Hosh] = Some(Hosh(getClass.toString.map(_.toByte).toArray) * a.hosh.get * b.hosh.get)
     def nested: Iterator[Expr] = Iterator(a, b)
   }
 
   case class Appl(a: Expr, b: Expr) extends Expr {
-    override val toString: String = a + "(" + b + ")"
-//     lazy val hosh: Option[Hosh] = (Some(
-//       Hosh(getClass.toString.map(_.toByte).toArray) *
-//         a.hosh.get *
-//         b.hosh.get
-//     ))
+    override val toString: String = String.valueOf(a) + "(" + b + ")"
+    //     lazy val hosh: Option[Hosh] = (Some(
+    //       Hosh(getClass.toString.map(_.toByte).toArray) *
+    //         a.hosh.get *
+    //         b.hosh.get
+    //     ))
     def nested: Iterator[Expr] = Iterator(a, b)
   }
 
   trait Ident extends Expr {
     val name: String
     lazy val expr: Option[Expr] = {
-      println(name, m)
+      println(name + m)
       m.get(name)
     }
     override def toString: String = name
-//     lazy val hosh: Option[Hosh] = expr match {
-//       case Some(expr) => expr.hosh
-//       case None => None
-//     }
+    //     lazy val hosh: Option[Hosh] = expr match {
+    //       case Some(expr) => expr.hosh
+    //       case None => None
+    //     }
     def nested: Iterator[Expr] = Iterator.empty
   }
 
@@ -151,26 +168,26 @@ object AST {
     def nested: Iterator[Expr] = Iterator.empty
   }
 
-  case class Scala(params: List[NamedIdent], code: Text) extends Expr {
-    //val paramsHosh: Hosh = params.map(param => Hosh(param.name.map(_.toByte).toArray)).reduce(_ * _)
-    override val toString: String = "«" + params.mkString(",") + ": " + code + "»"
-    //lazy val hosh: Option[Hosh] = Some(Hosh(getClass.toString.map(_.toByte).toArray) * paramsHosh * code.hosh.get)
-    def func(args: List[Any]): PrimitiveExpr = {
-      val toolbox = currentMirror.mkToolBox()
-      val vars = params.zipWithIndex.map {
-        case (i@Ident(name), idx) => f"  val $name = args($idx).asInstanceOf[${i.t.get.scalaTypeDescr}]\n"
-      }
-      //      println("111111111111111111111", code.value)
-      val txt =
-        f"""def f(args: List[Any]) = {
-           |${vars.mkString}""".stripMargin + "  " + code.value +
-          f"""
-             |}
-             |f(List(${args.mkString(", ")}))""".stripMargin
-      //      println(txt)
-      val evaluated = toolbox.eval(toolbox.parse(txt))
-      PrimitiveExpr(evaluated)
-    }
-    def nested: Iterator[Expr] = Iterator.empty
-  }
+  //   case class Scala(params: List[NamedIdent], code: Text) extends Expr {
+  //     //val paramsHosh: Hosh = params.map(param => Hosh(param.name.map(_.toByte).toArray)).reduce(_ * _)
+  //     //override val toString: String = "«" + params.mkString(",") + ": " + code + "»"
+  //     //lazy val hosh: Option[Hosh] = Some(Hosh(getClass.toString.map(_.toByte).toArray) * paramsHosh * code.hosh.get)
+  //     def func(args: List[Any]): PrimitiveExpr = {
+  //       val toolbox = currentMirror.mkToolBox()
+  //       val vars = params.zipWithIndex.map {
+  //         case (i@Ident(name), idx) => f"  val $name = args($idx).asInstanceOf[${i.t.get.scalaTypeDescr}]\n"
+  //       }
+  //       //      println("111111111111111111111", code.value)
+  //       val txt =
+  //         f"""def f(args: List[Any]) = {
+  //            |${vars.mkString}""".stripMargin + "  " + code.value +
+  //           f"""
+  //              |}
+  //              |f(List(${args.mkString(", ")}))""".stripMargin
+  //       //      println(txt)
+  //       val evaluated = toolbox.eval(toolbox.parse(txt))
+  //       PrimitiveExpr(evaluated)
+  //     }
+  //     def nested: Iterator[Expr] = Iterator.empty
+  //   }
 }

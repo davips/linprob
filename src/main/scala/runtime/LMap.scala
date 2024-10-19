@@ -23,7 +23,7 @@ package runtime
 import scala.collection.mutable
 
 case class LMap[T](m: Map[String, () => T] = Map[String, () => T]()) {
-  val cache = mutable.Map.empty[String, Option[T]]
+  val cache: mutable.Map[String, Option[T]] = mutable.Map.empty[String, Option[T]]
 
   def put(k: String, v: => T): LMap[T] = LMap(m + (k -> (() => v)))
 
@@ -37,7 +37,7 @@ case class LMap[T](m: Map[String, () => T] = Map[String, () => T]()) {
 }
 
 object LMapTest extends App {
-  var m = LMap[Int]()
+  var m: LMap[Int] = LMap[Int]()
   m = m.put("a", 3)
   m = m.put("b", m("a") * 5)
   println(m("b"))
