@@ -37,7 +37,7 @@ object Grammar extends RegexParsers with ImplicitConversions with JavaTokenParse
 
   //   private lazy val expr: P[Expr] = "(" ~> sequence(false) <~ ")" | scala | appl | assign | (lambda | ilambda) | term(false) | "{" ~> infixops <~ "}"
   //   private lazy val iexpr: P[Expr] = scala | iassign | lambda | math(true) | term(true) | "{" ~> infixops <~ "}"
-  private lazy val expr: P[Expr] = "(" ~> sequence(false) <~ ")" | assignfun | appl | assign | (lambda | ilambda) | term(false) | "{" ~> infixops <~ "}"
+  private lazy val expr: P[Expr] = "[" ~> sequence(false) <~ "]" | "(" ~> sequence(false) <~ ")" | assignfun | appl | assign | (lambda | ilambda) | term(false) | "{" ~> infixops <~ "}"
   private lazy val iexpr: P[Expr] = iassign | lambda | math(true) | term(true) | "{" ~> infixops <~ "}"
 
   private lazy val assignfun: P[Expr] = ((signature <~ "=") ~ prettyexpr) ^^ ((name: NamedIdent, args: List[NamedIdent], exp: Expr) => Assign(name, expandLambda(args, Sequence(List(exp)))))
@@ -73,8 +73,8 @@ object Grammar extends RegexParsers with ImplicitConversions with JavaTokenParse
   private lazy val curry = (op: String) => op ^^^ ((a: Expr, b: Expr) => Appl(Appl(oplamb(op), a), b))
 
   private lazy val term = (iargs: Boolean) => {
-    if (iargs) "(" ~> rep1sep(iexpr, separator) <~ ")" ^^ Sequence | anonidentifier | identifier // inverti anon com ident
-    else "(" ~> rep1sep(prettyexpr, separator) <~ ")" ^^ Sequence | identifier
+    if (iargs) ("[" ~> rep1sep(iexpr, separator) <~ "]" | "(" ~> rep1sep(iexpr, separator) <~ ")") ^^ Sequence | anonidentifier | identifier // inverti anon com ident
+    else ("[" ~> rep1sep(prettyexpr, separator) <~ "]" | "(" ~> rep1sep(prettyexpr, separator) <~ ")") ^^ Sequence | identifier
   } | literal | func
   private lazy val literal = num | str | bool
   private lazy val num = floatingPointNumber ^^ (n => Num(n.toDouble))

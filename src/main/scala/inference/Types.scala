@@ -42,13 +42,13 @@ import parsing.AST.*
 object Types {
 
   sealed trait ExprT {
-    val scalaTypeDescr: String
+    lazy val scalaTypeDescr: String
   }
 
   case object EmptyT extends ExprT {
     override def toString = "'ø'"
 
-    val scalaTypeDescr: String = "Null"
+    lazy val scalaTypeDescr: String = "Null"
   }
 
   trait PrimitiveExprT extends ExprT {
@@ -69,22 +69,22 @@ object Types {
 
   case class BoolT(expr: Expr) extends PrimitiveExprT {
     override val toString = "'boolean'"
-    val scalaTypeDescr: String = "Boolean"
+    lazy val scalaTypeDescr: String = "Boolean"
   }
 
   case class NumT(expr: Expr) extends PrimitiveExprT {
     override val toString = "'number'"
-    val scalaTypeDescr: String = "Double"
+    lazy val scalaTypeDescr: String = "Double"
   }
 
   case class CharT(expr: Expr) extends PrimitiveExprT {
     override val toString = "'char'"
-    val scalaTypeDescr: String = "Character"
+    lazy val scalaTypeDescr: String = "Character"
   }
 
   case class TextT(expr: Expr) extends PrimitiveExprT {
     override val toString = "'text'"
-    val scalaTypeDescr: String = "String"
+    lazy val scalaTypeDescr: String = "String"
   }
 
   //  case class ListT(elements_type: ExprT) extends ExprT {
@@ -93,7 +93,7 @@ object Types {
 
   case class AnyT(expr: Expr) extends PrimitiveExprT {
     override val toString: String = f"'any'"
-    override val scalaTypeDescr: String = "Any"
+    override lazy val scalaTypeDescr: String = "Any"
   }
 
   case class LambdaT(from: ExprT, to: ExprT) extends ExprT {

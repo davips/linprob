@@ -106,20 +106,20 @@ object AST {
 
   case class Lambda(param: Ident, body: Sequence) extends Expr {
     //lazy val paramHosh: Hosh = Hosh(param.name.map(_.toByte).toArray)
-    override val toString: String = f"λ$param→$body"
+    override val toString: String = f"λ$param$body"
     //lazy val hosh: Option[Hosh] = Some(Hosh(getClass.toString.map(_.toByte).toArray) * paramHosh * body.hosh.get)
     def nested: Iterator[Expr] = body.nested
   }
 
   case class Assign(a: NamedIdent, b: Expr) extends Expr {
     m = m.put(a.name, b)
-    override val toString: String = String.valueOf(a) + "←" + b
+    override val toString: String = String.valueOf(a) + " ← " + b
     //lazy val hosh: Option[Hosh] = Some(Hosh(getClass.toString.map(_.toByte).toArray) * a.hosh.get * b.hosh.get)
     def nested: Iterator[Expr] = Iterator(a, b)
   }
 
   case class Appl(a: Expr, b: Expr) extends Expr {
-    override val toString: String = String.valueOf(a) + "(" + b + ")"
+    override val toString: String = f"$a($b)"
     //     lazy val hosh: Option[Hosh] = (Some(
     //       Hosh(getClass.toString.map(_.toByte).toArray) *
     //         a.hosh.get *
@@ -157,7 +157,7 @@ object AST {
   }
 
   case class Sequence(items: List[Expr]) extends Expr {
-    override val toString: String = "(" + items.mkString("; ") + ")"
+    override val toString: String = "[" + items.mkString("; ") + "]"
     //lazy val hosh: Option[Hosh] = if (items.size == 1) items.head.hosh else Some(items.dropRight(1).map(_.hosh.get).sortBy(_.n).reduce(_ * _) * items.last.hosh.get)
     def nested: Iterator[Expr] = items.iterator
   }

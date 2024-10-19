@@ -1,4 +1,4 @@
-name := "tupi"
+name := "linprob"
 
 version := "0.1"
 
