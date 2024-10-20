@@ -94,9 +94,11 @@ object AST {
     def nested: Iterator[Expr] = Iterator.empty
   }
 
-  //  case class Op(f: (a: Double) => (b: Double) => Double, value: Expr) extends PrimitiveExpr {
-  //    override lazy val toString: String = "\"f→" + value + "\""
+  //  case class Show(e: Expr) extends Expr {
+  //    override lazy val toString: String = f"→$e←"
   //    def nested: Iterator[Expr] = Iterator.empty
+  //  }
+
   //  }
 
   case class Closure(value: Lambda | PartialOp | OpTo, ctx: LMap[Expr]) extends PrimitiveExpr {

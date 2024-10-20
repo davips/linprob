@@ -24,11 +24,13 @@ package evaluation
 import parsing.AST.*
 import runtime.LMap
 
+import scala.collection.mutable.ListBuffer
 import scala.math.pow
 
 object Interpreter {
+    //    private val output = ListBuffer[String]()
     def ev(e: Expr, m: LMap[Expr]): (Expr, LMap[Expr]) = {
-        println(f"ev:   $e")
+        //        println(f"ev:   $e")
         val e2 -> m2 = e match {
             case Ident(name) => m(name) -> m
             case Assign(x, y) =>
@@ -50,15 +52,17 @@ object Interpreter {
                     val r = opsymbol match {
                         case "+" => a + b
                         case "-" => a - b
-                        case "*" => a * b
+                        case "·" => a * b
                         case "/" => a / b
                         case "^" => pow(a, b)
-                        case "==" => a == b
-                        case "/=" | "≠" => a != b
+                        case "=" => a == b
+                        case "≠" => a != b
                         case "<" => a < b
-                        case "<=" | "≤" => a <= b
-                        case ">=" | "≥" => a >= b
+                        case "≤" => a <= b
+                        case "≥" => a >= b
                         case ">" => a > b
+                        case "√" => pow(b, 1 / a)
+                        case x => println(f"Operador desconhecido: $x"); sys.exit()
                     }
                     PrimitiveExpr(r) -> m
                 case Closure(Lambda(param, Sequence(List(body))), ctx) -> xev => ev(body, ctx.put(param.name, xev))
@@ -66,6 +70,10 @@ object Interpreter {
             case p: PrimitiveExpr => p -> m
             //       case s@Scala(params, _) => s.func(params.map(x => m(x.name))) -> m
             case la: (Lambda | PartialOp | OpTo) => Closure(la, m) -> m // We need a closure here, since Lambda can be returned as a value to be applied later
+            //            case Show(e) =>
+            //                val r = ev(e, m)
+            //                output += (f"Resposta: ${r._1}")
+            //                r
         }
         if (e2.isInstanceOf[PrimitiveExpr]) (e2, m2) else ev(e2, m2)
     }
@@ -73,5 +81,8 @@ object Interpreter {
     def eval(e: Expr): Any = {
         val re = ev(e, LMap())
         re._1.asInstanceOf[PrimitiveExpr].value
+        //        output.foreach{row =>
+        //            println(row)
+        //        }
     }
 }

@@ -41,38 +41,48 @@ object Grammar extends RegexParsers with ImplicitConversions with JavaTokenParse
         Sequence(newlst.toList)
     }
     private lazy val separator = ";" // not(":" ~ "\n") ~> "\n"
-    private lazy val prettyexpr: P[Expr] = math(false) | expr
+    private lazy val prettyexpr: P[Expr] = /*show |*/ math(false) | expr
+    private lazy val expr: P[Expr] = parentesized | assignfun | appl | assigns | assign | (lambda | ilambda) | term(false) | negative | sqroot | ("many other things" ~> ident ^^ NamedIdent) //| "{" ~> infixops <~ "}"
+    private lazy val parentesized: P[Expr] = "[" ~> sequence(false) <~ "]" | "(" ~> sequence(false) <~ ")"
 
-    //   private lazy val expr: P[Expr] = "(" ~> sequence(false) <~ ")" | scala | appl | assign | (lambda | ilambda) | term(false) | "{" ~> infixops <~ "}"
-    //   private lazy val iexpr: P[Expr] = scala | iassign | lambda | math(true) | term(true) | "{" ~> infixops <~ "}"
-    private lazy val expr: P[Expr] = "[" ~> sequence(false) <~ "]" | "(" ~> sequence(false) <~ ")" | assignfun | appl | assigns | assign | (lambda | ilambda) | term(false) | "{" ~> infixops <~ "}"
-    private lazy val iexpr: P[Expr] = iassign | lambda | math(true) | term(true) | "{" ~> infixops <~ "}"
+    private lazy val negative: P[Expr] = "-" ~> (identifier | parentesized) ^^ (x => Appl(Appl(PartialOp("·"), Num(-1)), x))
+    private lazy val sqroot: P[Expr] = "√" ~> (identifier | parentesized) ^^ (x => Appl(Appl(PartialOp("√"), Num(2)), x)) // TODO só aceitar Num
+    //    private lazy val show: P[Expr] = identifier <~ "?" ^^ Show
 
+    private lazy val iexpr: P[Expr] = iassign | lambda | math(true) | term(true) //| "{" ~> infixops <~ "}"
     private lazy val assignfun: P[Expr] = ((signature <~ "=") ~ prettyexpr) ^^ ((name: NamedIdent, args: List[NamedIdent], exp: Expr) => Assign(name, expandLambda(args, Sequence(List(exp)))))
     private lazy val signature = "seja" ~> (identifier ~ ("(" ~> rep1(identifier) <~ ")"))
+
     private lazy val assign0 = (identifier <~ "=") ~ prettyexpr ^^ Assign
     private lazy val assign = "seja" ~> assign0
     private lazy val assigns = ("sejam" ~> rep1sep(assign0, ",")) ^^ Assigns
     private lazy val iassign: P[Expr] = (identifier <~ "←") ~ (assigns | assign | lambda | math(true) | term(true)) ^^ Assign
+
     private lazy val lambda = ("{" ~> rep1(identifier) <~ ":") ~ (sequence(false) <~ "}") ^^ expandLambda
     private lazy val ilambda = ("{" ~> sequence(true) <~ "}") ^^ iexpandLambda // infix lambda?
     //   private lazy val scala = ("{" ~> rep(typedIdent) ~ (str <~ ":") ~ (argType <~ "}")) ^^ expandScala
     private lazy val typedIdent = (identifier <~ ":") ~ argType ^^ buildTypedIdent
     private lazy val argType = "b" | "c" | "t" | "n"
     private lazy val identifier = not("_") ~> ident ^^ NamedIdent
-
-    // infixops serve pra algo ainda?
-    private lazy val infixops = ("=" | "=/=" | ">=" | "<=" | ">" | "<" | "+" | "-" | "*" | "/" | "^") ^^ oplamb
-
-    private lazy val oplamb = (op: String) => PartialOp(op)
+    //    private lazy val infixops = ("=" | "=/=" | ">=" | "<=" | ">" | "<" | "+" | "-" | "*" | "/" | "^") ^^ oplamb
+    private lazy val oplamb = (op: String) => op match {
+        case "<" | "≤" | "=" | "≥" | ">" | "≠" | "+" | "-" | "·" | "/" | "^" => PartialOp(op)
+        case "<=" => PartialOp("≤")
+        case ">=" => PartialOp("≥")
+        case "!=" | "/=" | "=/=" => PartialOp("≠")
+        case "*" | "×" => PartialOp("·")
+        case "**" => PartialOp("^")
+        case x => println(f"Operador desconhecido: $x")
+            sys.exit()
+    }
     private lazy val anonidentifier = """_[1-9]+""".r ^^ (idx => AnonIdentN(idx.tail.toInt)) | "_" ^^^ AnonIdent()
-    private lazy val math = (iargs: Boolean) => equality(iargs)
-    private lazy val equality = (iargs: Boolean) => chainl1(
-        sum(iargs), curry(">") | curry("<") | curry("≠") | curry("≥") | curry("≤") | curry("=") | curry("/=") | curry(">=") | curry("<=")
+    private lazy val math = (iargs: Boolean) => comparisonPrecedence(iargs)
+    private lazy val comparisonPrecedence = (iargs: Boolean) => chainl1(
+        sumLikePrecendence(iargs), curry("<") | curry("<=") | curry("≤") | curry("=") | curry(">=") | curry("≥") | curry(">") | curry("≠")
     )
-    private lazy val sum = (iargs: Boolean) => chainl1(product(iargs), curry("+") | curry("-"))
-    private lazy val product = (iargs: Boolean) => chainl1(power(iargs), curry("·") | curry("×") | curry(".") | curry("*") | curry("/"))
-    private lazy val power = (iargs: Boolean) => chainl1(if (iargs) iexpr else expr, curry("^"))
+    private lazy val sumLikePrecendence = (iargs: Boolean) => chainl1(productLikePrecedence(iargs), curry("+") | curry("-"))
+    private lazy val productLikePrecedence = (iargs: Boolean) => chainl1(powerLikePrecedence(iargs), curry("·") | curry("×") | curry("*") | curry("/"))
+    private lazy val powerLikePrecedence = (iargs: Boolean) => chainl1(if (iargs) iexpr else expr, curry("^") | curry("**"))
     private lazy val curry = (op: String) => op ^^^ ((a: Expr, b: Expr) => Appl(Appl(oplamb(op), a), b))
 
     private lazy val term = (iargs: Boolean) => {
@@ -87,7 +97,7 @@ object Grammar extends RegexParsers with ImplicitConversions with JavaTokenParse
 
     private lazy val fargs = "(" ~> rep1sep(expr | func, ",") <~ ")" ^^ ((lst: List[Expr]) => Sequence(lst))
     private lazy val appl: P[Expr] = (appl ~ fargs | func ~ fargs) ^^ Appl
-    private lazy val func: P[Expr] = lambda | ilambda | identifier | "{" ~> infixops <~ "}" | "#" ^^^ Id()
+    private lazy val func: P[Expr] = lambda | ilambda | identifier /* "{" ~> infixops <~ "}" | */ ^^^ Id()
 
     def parse(txt: String): ParseResult[Sequence] = parseAll(phrase(program), new PackratReader(new CharSequenceReader(txt)))
 }
