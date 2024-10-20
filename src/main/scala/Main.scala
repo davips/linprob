@@ -35,9 +35,12 @@ object Main extends App {
   val txt3: String = if (txt2.endsWith(";")) txt2.dropRight(1) else txt2
   val st: Long = System.currentTimeMillis()
   val parsed: Grammar.ParseResult[AST.Sequence] = Grammar.parse(txt3)
-  println(("" + (System.currentTimeMillis() - st)) + "ms")
-  println(String.valueOf(parsed) + "\n")
-  if (!parsed.successful) sys.exit()
+  //  println(("" + (System.currentTimeMillis() - st)) + "ms")
+
+  if (!parsed.successful) {
+    println(String.valueOf(parsed) + "\n")
+    sys.exit()
+  }
   if (!HM.check(parsed.get)) sys.exit()
   val re: Any = Interpreter.eval(parsed.get)
   println(re)

@@ -21,6 +21,7 @@
 package parsing
 
 //import algebra.Hosh
+
 import inference.Types.EmptyT
 import runtime.LMap
 
@@ -158,6 +159,12 @@ object AST {
 
   case class Sequence(items: List[Expr]) extends Expr {
     override val toString: String = "[" + items.mkString("; ") + "]"
+    //lazy val hosh: Option[Hosh] = if (items.size == 1) items.head.hosh else Some(items.dropRight(1).map(_.hosh.get).sortBy(_.n).reduce(_ * _) * items.last.hosh.get)
+    def nested: Iterator[Expr] = items.iterator
+  }
+
+  case class Assigns(items: List[Assign]) extends Expr {
+    override val toString: String = "«" + items.mkString("; ") + "»"
     //lazy val hosh: Option[Hosh] = if (items.size == 1) items.head.hosh else Some(items.dropRight(1).map(_.hosh.get).sortBy(_.n).reduce(_ * _) * items.last.hosh.get)
     def nested: Iterator[Expr] = items.iterator
   }

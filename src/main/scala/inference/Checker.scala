@@ -78,6 +78,23 @@ class TypeSystem {
     } else res.last._2.get
   }
 
+  private def handleAssign(id: NamedIdent, e: Expr, env: Env, nongen: Set[Var], debug: Boolean): Env = {
+    var newenv = env
+    try {
+      val (etype, _) = analyse(e, env, nongen, debug)
+      newenv += (id.name -> etype)
+    } catch { //loop?
+      case p: Undefined if (p.getMessage == id.name) =>
+        println(p.getMessage)
+        println("Loop detected!")
+        val newtype = newVar
+        newenv += (id.name -> newtype)
+        val (etype, _) = analyse(e, newenv, nongen + newtype, debug)
+        unify(newtype, etype)
+        analyse(e, newenv, nongen, debug)
+    }
+    newenv
+  }
   def analyse(ast: Expr, env: Env, print: Boolean = false): ExprT = analyse(ast, env, Set.empty, print)._1
 
   def analyse(ast: Expr, env: Env, nongen: Set[Var], debug: Boolean): (ExprT, Env) = {
@@ -104,19 +121,7 @@ class TypeSystem {
           val (resulttype, _) = analyse(body, env + (arg.name -> argtype), nongen + argtype, debug)
           LambdaT(argtype, resulttype)
         case Assign(id, e) =>
-          try {
-            val (etype, _) = analyse(e, env, nongen, debug)
-            newenv += (id.name -> etype)
-          } catch { //loop?
-            case p: Undefined if (p.getMessage == id.name) =>
-              println(p.getMessage)
-              println("Loop detected!")
-              val newtype = newVar
-              newenv += (id.name -> newtype)
-              val (etype, _) = analyse(e, newenv, nongen + newtype, debug)
-              unify(newtype, etype)
-              analyse(e, newenv, nongen, debug)
-          }
+          newenv = handleAssign(id, e, newenv, nongen, debug)
           EmptyT
         case n: Num => NumT(n)
         case t: Text => TextT(t)
@@ -212,7 +217,7 @@ class TypeSystem {
 object HM extends TypeSystem {
   def check(ast: Expr, env: Env = Map.empty): Boolean = {
     try {
-      analyse(ast, env, print = true)
+      analyse(ast, env, print = true) // TODO flag verbose log
     } catch {
       case t: Undefined =>
         print("Type inference: undefined symbol " + t.getMessage)
@@ -221,7 +226,7 @@ object HM extends TypeSystem {
         print(t.getMessage)
         return false
     }
-    println()
+    //    println()
     true
   }
 }
