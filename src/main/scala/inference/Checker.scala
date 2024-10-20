@@ -125,7 +125,7 @@ class TypeSystem {
                     EmptyT
                 case n: Num => NumT(n)
                 case t: Text => TextT(t)
-                case Show(e) => analyse(e, env, nongen, debug)._1
+//                case Show(e) => analyse(e, env, nongen, debug)._1
             }
             if (debug) println("%-41s".format(ast.toString).grouped(62).mkString(" ...\n  ... ") + ": " + t)
             (t, newenv)

@@ -1,1 +1,1 @@
-sbt "runMain Main"
+sbt  -batch -error  "runMain Main"
