@@ -45,7 +45,7 @@ object AST {
     def nested: Iterator[Expr] = Iterator.empty
   }
 
-  case class OpTo(opsymbol: String, value: Num) extends Expr {
+  case class OpTo(opsymbol: String, value: Num | Bool) extends Expr {
     override val toString = f"{$opsymbol}($value)"
     def nested: Iterator[Expr] = Iterator.empty
   }
@@ -75,7 +75,7 @@ object AST {
   }
 
   case class Bool(value: java.lang.Boolean) extends PrimitiveExpr {
-    override val toString: String = if (value) "↑" else "↓"
+    override val toString: String = if (value) "⊤" else "⊥"
     def nested: Iterator[Expr] = Iterator.empty
   }
 
@@ -160,7 +160,19 @@ object AST {
   }
 
   case class Sequence(items: List[Expr]) extends Expr {
-    override val toString: String = "[" + items.mkString("; ") + "]"
+    override val toString: String = "[" + items.mkString("\n") + "]"
+    //lazy val hosh: Option[Hosh] = if (items.size == 1) items.head.hosh else Some(items.dropRight(1).map(_.hosh.get).sortBy(_.n).reduce(_ * _) * items.last.hosh.get)
+    def nested: Iterator[Expr] = items.iterator
+  }
+
+  case class Case(value: Expr, condition: Expr) extends Expr {
+    override val toString: String = f"$condition→$value"
+    //lazy val hosh: Option[Hosh] = if (items.size == 1) items.head.hosh else Some(items.dropRight(1).map(_.hosh.get).sortBy(_.n).reduce(_ * _) * items.last.hosh.get)
+    def nested: Iterator[Expr] = Iterator(condition, value)
+  }
+
+  case class Conditional(items: List[Case]) extends Expr {
+    override val toString: String = "{" + items.mkString("; ") + "}"
     //lazy val hosh: Option[Hosh] = if (items.size == 1) items.head.hosh else Some(items.dropRight(1).map(_.hosh.get).sortBy(_.n).reduce(_ * _) * items.last.hosh.get)
     def nested: Iterator[Expr] = items.iterator
   }

@@ -24,7 +24,6 @@ package evaluation
 import parsing.AST.*
 import runtime.LMap
 
-import scala.collection.mutable.ListBuffer
 import scala.math.pow
 
 object Interpreter {
@@ -62,7 +61,21 @@ object Interpreter {
                         case "≥" => a >= b
                         case ">" => a > b
                         case "√" => pow(b, 1 / a)
-                        case x => println(f"Operador desconhecido: $x"); sys.exit()
+                        case x => println(f"Operador binário numérico desconhecido: $x"); sys.exit()
+                    }
+                    PrimitiveExpr(r) -> m
+                case Closure(OpTo(opsymbol, Bool(b)), ctx) -> bev =>
+                    val r = opsymbol match {
+                        case "¬" => !b
+                        case "?" => b
+                        case b => println(f"Operador unário lógico desconhecido: $x"); sys.exit()
+                    }
+                    PrimitiveExpr(r) -> m
+                case Closure(OpTo(opsymbol, Bool(a)), ctx) -> Bool(b) =>
+                    val r = opsymbol match {
+                        case "∧" => a && b
+                        case "∨" => a || b
+                        case x => println(f"Operador binário lógico desconhecido: $x"); sys.exit()
                     }
                     PrimitiveExpr(r) -> m
                 case Closure(Lambda(param, Sequence(List(body))), ctx) -> xev => ev(body, ctx.put(param.name, xev))

@@ -41,11 +41,13 @@ object Main extends App {
         println(String.valueOf(parsed) + "\n")
         sys.exit()
     }
-    if (!HM.check(parsed.get)) {
-        HM.check(parsed.get, verbose = true)
+    println(f"Parseado como:\n${parsed.get}\n----------------")
+    println()
+
+    if (!HM.check(parsed.get, verbosity = 0)) {
+        HM.check(parsed.get, verbosity = 1)
         sys.exit()
     }
     val re: Any = Interpreter.eval(parsed.get)
-    //  print(parsed.get)
     println(re)
 }
